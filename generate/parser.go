@@ -27,7 +27,7 @@ const (
 	optionsOption   = "options"
 	rangeOption     = "range"
 	exampleOption   = "example"
-	optionSeparator = "|"
+	optionSeparator = ","
 	equalToken      = "="
 	atRespDoc       = "@respdoc-"
 )
@@ -182,11 +182,24 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 									}
 
 									required := true
+									optionsTmp := ""
 									for _, option := range tag.Options {
+										if optionsTmp != "" {
+											option = optionsTmp + optionSeparator + option
+										}
 										if strings.HasPrefix(option, optionsOption) {
-											segs := strings.SplitN(option, equalToken, 2)
-											if len(segs) == 2 {
-												sp.Enum = strings.Split(segs[1], optionSeparator)
+											if strings.HasSuffix(option, "]") {
+												// 说明是最后一个 option
+												segs := strings.SplitN(option, equalToken, 2)
+												if len(segs) == 2 {
+													// 去掉前后的 []
+													segs[1] = strings.Trim(segs[1], "[]")
+													sp.Enum = strings.Split(segs[1], optionSeparator)
+												}
+												optionsTmp = ""
+											} else {
+												// 不是最后一个 option
+												optionsTmp += option
 											}
 										}
 
@@ -426,11 +439,24 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 		}
 
 		required := true
+		optionsTmp := ""
 		for _, option := range tag.Options {
+			if optionsTmp != "" {
+				option = optionsTmp + optionSeparator + option
+			}
 			if strings.HasPrefix(option, optionsOption) {
-				segs := strings.SplitN(option, equalToken, 2)
-				if len(segs) == 2 {
-					sp.Enum = strings.Split(segs[1], optionSeparator)
+				if strings.HasSuffix(option, "]") {
+					// 说明是最后一个 option
+					segs := strings.SplitN(option, equalToken, 2)
+					if len(segs) == 2 {
+						// 去掉前后的 []
+						segs[1] = strings.Trim(segs[1], "[]")
+						sp.Enum = strings.Split(segs[1], optionSeparator)
+					}
+					optionsTmp = ""
+				} else {
+					// 不是最后一个 option
+					optionsTmp += option
 				}
 			}
 
@@ -658,7 +684,11 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 		if len(tag.Options) == 0 {
 			continue
 		}
+		optionsTmp := ""
 		for _, option := range tag.Options {
+			if optionsTmp != "" {
+				option = optionsTmp + optionSeparator + option
+			}
 			switch {
 			case strings.HasPrefix(option, defaultOption):
 				segs := strings.Split(option, equalToken)
@@ -666,9 +696,18 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 					ret.Default = segs[1]
 				}
 			case strings.HasPrefix(option, optionsOption):
-				segs := strings.SplitN(option, equalToken, 2)
-				if len(segs) == 2 {
-					ret.Enum = strings.Split(segs[1], optionSeparator)
+				if strings.HasSuffix(option, "]") {
+					// 说明是最后一个 option
+					segs := strings.SplitN(option, equalToken, 2)
+					if len(segs) == 2 {
+						// 去掉前后的 []
+						segs[1] = strings.Trim(segs[1], "[]")
+						ret.Enum = strings.Split(segs[1], optionSeparator)
+					}
+					optionsTmp = ""
+				} else {
+					// 不是最后一个 option
+					optionsTmp += option
 				}
 			case strings.HasPrefix(option, rangeOption):
 				segs := strings.SplitN(option, equalToken, 2)
