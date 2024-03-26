@@ -5,8 +5,8 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/scutrobotlab/goctl-swagger/action"
 	"github.com/urfave/cli/v2"
-	"github.com/zeromicro/goctl-swagger/action"
 )
 
 var (
